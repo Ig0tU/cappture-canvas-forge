@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Send, Plus, Command, Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { simulateAgentAction, MessageTypes } from '@/lib/canvasState';
 
 interface Message {
   id: string;
@@ -24,13 +25,23 @@ const ChatInterface: React.FC = () => {
     }
   ]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isAgentActive, setIsAgentActive] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+  
+  useEffect(() => {
+    // Setup the chat container reference for the global state
+    if (chatContainerRef.current) {
+      window.document.getElementById('chat-container')?.remove();
+      chatContainerRef.current.id = 'chat-container';
+    }
+  }, []);
   
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -39,7 +50,7 @@ const ChatInterface: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!input.trim()) return;
+    if (!input.trim() || isLoading) return;
     
     // Add user message
     const userMessage: Message = {
@@ -53,30 +64,63 @@ const ChatInterface: React.FC = () => {
     setInput('');
     setIsLoading(true);
     
-    // Simulate AI response
-    setTimeout(() => {
-      const responses = [
-        "I can help you build that! Let's start by creating the basic structure for your app.",
-        "That's an interesting idea. Let me generate a prototype for you to review.",
-        "I can modify your existing app to incorporate those features. Let me show you a preview.",
-        "Based on your requirements, here's how we can implement this functionality.",
-      ];
+    try {
+      // Use our agent simulation for responses
+      await simulateAgentAction(input);
       
-      const aiMessage: Message = {
-        id: Date.now().toString(),
-        role: 'assistant',
-        content: responses[Math.floor(Math.random() * responses.length)],
-        timestamp: new Date(),
-      };
-      
-      setMessages(prev => [...prev, aiMessage]);
+      // After the agent responds, simulate the response message
+      setTimeout(() => {
+        const responses = [
+          "I can help you build that! Let's start by creating the basic structure for your app.",
+          "That's an interesting idea. Let me generate a prototype for you to review.",
+          "I can modify your existing app to incorporate those features. Let me show you a preview.",
+          "Based on your requirements, here's how we can implement this functionality.",
+        ];
+        
+        const aiMessage: Message = {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: responses[Math.floor(Math.random() * responses.length)],
+          timestamp: new Date(),
+        };
+        
+        setMessages(prev => [...prev, aiMessage]);
+        setIsLoading(false);
+      }, 500);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to process your request",
+      });
       setIsLoading(false);
-    }, 1500);
+    }
+  };
+  
+  const toggleAgent = () => {
+    setIsAgentActive(prev => !prev);
+    toast({
+      title: isAgentActive ? "Agent Deactivated" : "Agent Activated",
+      description: isAgentActive ? "The agent is now deactivated" : "The agent is ready to assist you",
+    });
   };
   
   return (
     <div className="flex flex-col h-full">
-      <ScrollArea className="flex-1 p-4">
+      <div className="px-4 py-2 border-b border-border/40">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-medium">Canvas Assistant</h3>
+          <Button 
+            size="sm" 
+            variant={isAgentActive ? "default" : "outline"}
+            onClick={toggleAgent}
+            className={isAgentActive ? "bg-accent text-accent-foreground" : ""}
+          >
+            {isAgentActive ? "Active" : "Activate"} <Zap className="ml-1 h-3 w-3" />
+          </Button>
+        </div>
+      </div>
+      
+      <ScrollArea className="flex-1 p-4" ref={chatContainerRef}>
         <div className="space-y-4">
           {messages.map((message) => (
             <div 
@@ -104,7 +148,7 @@ const ChatInterface: React.FC = () => {
       </ScrollArea>
       
       <div className="p-4 border-t border-border">
-        <form onSubmit={handleSubmit} className="flex items-center gap-2">
+        <form onSubmit={handleSubmit} className="flex items-center gap-2" id="chat-form">
           <Button
             type="button"
             size="icon"
@@ -118,21 +162,32 @@ const ChatInterface: React.FC = () => {
             <Command className="h-5 w-5" />
           </Button>
           <Input
+            id="message-input"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask me anything..."
-            disabled={isLoading}
+            disabled={isLoading || !isAgentActive}
             className="flex-1"
           />
           <Button
+            id="send-message"
             type="submit"
             size="icon"
-            disabled={isLoading || !input.trim()}
+            disabled={isLoading || !input.trim() || !isAgentActive}
             className="shrink-0"
           >
             <Send className="h-5 w-5" />
           </Button>
         </form>
+        
+        <div id="typing-indicator" className="mt-2 hidden items-center text-xs text-muted-foreground">
+          <div className="flex space-x-1 mr-2">
+            <span className="animate-bounce delay-100">●</span>
+            <span className="animate-bounce delay-200">●</span>
+            <span className="animate-bounce delay-300">●</span>
+          </div>
+          <span>Canvas Assistant is thinking...</span>
+        </div>
       </div>
     </div>
   );
