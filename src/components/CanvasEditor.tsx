@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { MinusIcon, PlusIcon, Eye, Code, Settings, Components, LayoutGrid, Text, Image } from 'lucide-react';
+import { MinusIcon, PlusIcon, Eye, Code, Settings, LayoutGrid, Text, Image, Boxes } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const CanvasEditor: React.FC = () => {
@@ -63,7 +63,7 @@ const CanvasEditor: React.FC = () => {
           <Tabs defaultValue="components">
             <TabsList className="w-full">
               <TabsTrigger value="components" className="flex-1">
-                <Components className="h-4 w-4 mr-1" />
+                <Boxes className="h-4 w-4 mr-1" />
                 <span className="sr-only sm:not-sr-only sm:inline-block">Components</span>
               </TabsTrigger>
               <TabsTrigger value="layout" className="flex-1">
