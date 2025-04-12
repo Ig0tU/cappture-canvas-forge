@@ -1,4 +1,3 @@
-
 // Message types for app communication
 export const MessageTypes = {
   USER: 'user',
@@ -201,8 +200,8 @@ export const toggleAgentState = (active: boolean): void => {
   const startButton = document.getElementById('start-agent');
   const stopButton = document.getElementById('stop-agent');
   
-  if (startButton) startButton.disabled = active;
-  if (stopButton) stopButton.disabled = !active;
+  if (startButton) (startButton as HTMLButtonElement).disabled = active;
+  if (stopButton) (stopButton as HTMLButtonElement).disabled = !active;
 };
 
 export const setProcessingState = (processing: boolean): void => {
@@ -219,7 +218,7 @@ export const setProcessingState = (processing: boolean): void => {
   
   // Disable send button when processing
   const sendButton = document.getElementById('send-message');
-  if (sendButton) sendButton.disabled = processing;
+  if (sendButton) (sendButton as HTMLButtonElement).disabled = processing;
 };
 
 // Chat management
