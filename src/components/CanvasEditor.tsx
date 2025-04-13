@@ -1,13 +1,12 @@
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { MinusIcon, PlusIcon, Eye, Code, Settings, LayoutGrid, Text, Image, Boxes, Terminal, FileText, Save } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { Button } from '@/components/ui/button';
-import { STATE, initializeCanvasState, updateFileList } from '@/lib/canvasState';
-import { setupEventListeners } from '@/lib/canvasEventHandlers';
+import { Image } from 'lucide-react';
+import { initializeCanvasState, updateFileList, STATE } from '@/lib/canvasState';
+import { setupEventListeners, setupRealtimeSubscription } from '@/lib/canvasEventHandlers';
+import CanvasToolbar from './CanvasToolbar';
+import ComponentPalette from './ComponentPalette';
+import CanvasElementEditor from './CanvasElementEditor';
 
 interface CanvasElement {
   id: string;
@@ -62,8 +61,12 @@ const CanvasEditor: React.FC = () => {
       }
     }, 30000); // Auto-save every 30 seconds
     
+    // Setup realtime subscription
+    const unsubscribe = setupRealtimeSubscription();
+    
     return () => {
       clearInterval(autoSaveInterval);
+      if (unsubscribe) unsubscribe();
     };
   }, [autoSave, hasUnsavedChanges]);
   
@@ -222,6 +225,20 @@ const CanvasEditor: React.FC = () => {
     });
   };
   
+  const handleUpdateElement = (elementId: string, changes: Partial<CanvasElement>) => {
+    setCanvasElements(prev => prev.map(el => {
+      if (el.id === elementId) {
+        return {
+          ...el,
+          ...changes,
+        };
+      }
+      return el;
+    }));
+    
+    setHasUnsavedChanges(true);
+  };
+  
   const increaseZoom = () => {
     if (zoomLevel < 200) {
       setZoomLevel(prev => prev + 10);
@@ -239,151 +256,22 @@ const CanvasEditor: React.FC = () => {
   };
   
   // Get the selected element data
-  const selectedElementData = useMemo(() => {
-    return canvasElements.find(el => el.id === selectedElement);
-  }, [canvasElements, selectedElement]);
+  const selectedElementData = canvasElements.find(el => el.id === selectedElement) || null;
 
   return (
     <div className="h-full flex flex-col">
-      <div className="bg-secondary/30 mb-4 p-2 rounded-md flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <button 
-            className="p-1 rounded hover:bg-secondary"
-            onClick={decreaseZoom}
-          >
-            <MinusIcon className="h-4 w-4" />
-          </button>
-          <span className="text-sm">{zoomLevel}%</span>
-          <button 
-            className="p-1 rounded hover:bg-secondary"
-            onClick={increaseZoom}
-          >
-            <PlusIcon className="h-4 w-4" />
-          </button>
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          <button className="p-1 rounded hover:bg-secondary">
-            <Eye className="h-4 w-4" />
-          </button>
-          <button className="p-1 rounded hover:bg-secondary">
-            <Code className="h-4 w-4" />
-          </button>
-          <button 
-            className={`p-1 rounded hover:bg-secondary ${showTerminal ? 'text-accent' : ''}`}
-            onClick={toggleTerminal}
-          >
-            <Terminal className="h-4 w-4" />
-          </button>
-          <button 
-            className={`p-1 rounded hover:bg-secondary ${hasUnsavedChanges ? 'text-yellow-500 animate-pulse' : ''}`}
-            onClick={saveCanvas}
-          >
-            <Save className="h-4 w-4" />
-          </button>
-          <button className="p-1 rounded hover:bg-secondary">
-            <Settings className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
+      <CanvasToolbar 
+        zoomLevel={zoomLevel}
+        onZoomIn={increaseZoom}
+        onZoomOut={decreaseZoom}
+        onToggleTerminal={toggleTerminal}
+        showTerminal={showTerminal}
+        onSaveCanvas={saveCanvas}
+        hasUnsavedChanges={hasUnsavedChanges}
+      />
       
       <div className="flex flex-1 gap-4">
-        <Card className="w-48 shrink-0">
-          <Tabs defaultValue="components">
-            <TabsList className="w-full">
-              <TabsTrigger value="components" className="flex-1">
-                <Boxes className="h-4 w-4 mr-1" />
-                <span className="sr-only sm:not-sr-only sm:inline-block">Components</span>
-              </TabsTrigger>
-              <TabsTrigger value="layout" className="flex-1">
-                <LayoutGrid className="h-4 w-4 mr-1" />
-                <span className="sr-only sm:not-sr-only sm:inline-block">Layout</span>
-              </TabsTrigger>
-              <TabsTrigger value="files" className="flex-1">
-                <FileText className="h-4 w-4 mr-1" />
-                <span className="sr-only sm:not-sr-only sm:inline-block">Files</span>
-              </TabsTrigger>
-            </TabsList>
-            
-            <ScrollArea className="h-[calc(100vh-240px)]">
-              <TabsContent value="components" className="m-0 py-2">
-                <CardContent className="p-2 space-y-2">
-                  {[
-                    { id: 'Button', label: 'Button', icon: 'rounded-md bg-blue-500 w-full py-1 text-white text-center' },
-                    { id: 'Input', label: 'Input', icon: 'rounded-md border w-full py-1' },
-                    { id: 'Card', label: 'Card', icon: 'rounded-md border w-full py-2' },
-                    { id: 'Text', label: 'Text', icon: <Text className="h-4 w-4 mr-1" /> },
-                    { id: 'Image', label: 'Image', icon: <Image className="h-4 w-4 mr-1" /> },
-                  ].map((item) => (
-                    <div 
-                      key={item.id}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, item.label)}
-                      className="flex items-center gap-2 p-2 rounded-md hover:bg-secondary/50 cursor-grab"
-                      onClick={() => handleElementClick(item.id, { stopPropagation: () => {} } as any)}
-                    >
-                      {typeof item.icon === 'string' ? (
-                        <div className={item.icon}>
-                          {item.id === 'Button' && 'Button'}
-                        </div>
-                      ) : (
-                        item.icon
-                      )}
-                      <span className="text-sm">{item.label}</span>
-                    </div>
-                  ))}
-                </CardContent>
-              </TabsContent>
-              
-              <TabsContent value="layout" className="m-0 py-2">
-                <CardContent className="p-2 space-y-2">
-                  {[
-                    { id: 'Container', label: 'Container', icon: 'rounded-md border w-full py-2' },
-                    { id: 'Grid', label: 'Grid', icon: 'rounded-md border w-full grid grid-cols-2 gap-1 p-1' },
-                    { id: 'Column', label: 'Column', icon: 'rounded-md border w-full flex flex-col gap-1 p-1' },
-                    { id: 'Row', label: 'Row', icon: 'rounded-md border w-full flex gap-1 p-1' },
-                  ].map((item) => (
-                    <div 
-                      key={item.id}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, item.label)}
-                      className="flex items-center gap-2 p-2 rounded-md hover:bg-secondary/50 cursor-grab"
-                    >
-                      <div className={item.icon}></div>
-                      <span className="text-sm">{item.label}</span>
-                    </div>
-                  ))}
-                </CardContent>
-              </TabsContent>
-              
-              <TabsContent value="files" className="m-0 py-2">
-                <CardContent className="p-2 space-y-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="w-full"
-                    id="new-file"
-                  >
-                    + New File
-                  </Button>
-                  
-                  <div className="mt-4" id="file-list">
-                    {STATE.workspace.files.map(file => (
-                      <div 
-                        key={file.id}
-                        className="flex items-center justify-between p-2 rounded hover:bg-secondary/50 cursor-pointer"
-                        data-file-id={file.id}
-                      >
-                        <span className="text-sm">{file.name}</span>
-                        <button className="text-xs opacity-70 hover:opacity-100">&times;</button>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </TabsContent>
-            </ScrollArea>
-          </Tabs>
-        </Card>
+        <ComponentPalette onDragStart={handleDragStart} />
         
         <div className="flex-1 flex flex-col">
           <div 
@@ -430,6 +318,7 @@ const CanvasEditor: React.FC = () => {
                     // Mark that we're dragging an existing element
                     e.dataTransfer.setData('application/element-id', element.id);
                   }}
+                  data-element-id={element.id}
                 >
                   {element.type === 'Button' && (
                     <button className="w-full h-full" style={element.style}>
@@ -487,87 +376,10 @@ const CanvasEditor: React.FC = () => {
       </div>
       
       {selectedElementData && (
-        <div className="absolute right-4 top-20 w-64 bg-card border border-border rounded-md shadow-lg p-4">
-          <h3 className="font-medium mb-2">{selectedElementData.type} Properties</h3>
-          <div className="space-y-2">
-            <div>
-              <label className="text-xs text-muted-foreground">Content</label>
-              <input 
-                type="text" 
-                className="w-full p-1 border rounded text-sm" 
-                value={selectedElementData.content || ''}
-                onChange={(e) => {
-                  setCanvasElements(prev => prev.map(el => {
-                    if (el.id === selectedElementData.id) {
-                      return { ...el, content: e.target.value };
-                    }
-                    return el;
-                  }));
-                  setHasUnsavedChanges(true);
-                }}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-xs text-muted-foreground">Width</label>
-                <input 
-                  type="number" 
-                  className="w-full p-1 border rounded text-sm" 
-                  value={selectedElementData.width}
-                  onChange={(e) => {
-                    setCanvasElements(prev => prev.map(el => {
-                      if (el.id === selectedElementData.id) {
-                        return { ...el, width: parseInt(e.target.value) };
-                      }
-                      return el;
-                    }));
-                    setHasUnsavedChanges(true);
-                  }}
-                />
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground">Height</label>
-                <input 
-                  type="number" 
-                  className="w-full p-1 border rounded text-sm" 
-                  value={selectedElementData.height}
-                  onChange={(e) => {
-                    setCanvasElements(prev => prev.map(el => {
-                      if (el.id === selectedElementData.id) {
-                        return { ...el, height: parseInt(e.target.value) };
-                      }
-                      return el;
-                    }));
-                    setHasUnsavedChanges(true);
-                  }}
-                />
-              </div>
-            </div>
-            
-            {selectedElementData.type === 'Button' && (
-              <div>
-                <label className="text-xs text-muted-foreground">Background Color</label>
-                <input 
-                  type="color" 
-                  className="w-full p-1 border rounded text-sm h-8" 
-                  value={selectedElementData.style?.backgroundColor || '#3b82f6'}
-                  onChange={(e) => {
-                    setCanvasElements(prev => prev.map(el => {
-                      if (el.id === selectedElementData.id) {
-                        return { 
-                          ...el, 
-                          style: { ...el.style, backgroundColor: e.target.value } 
-                        };
-                      }
-                      return el;
-                    }));
-                    setHasUnsavedChanges(true);
-                  }}
-                />
-              </div>
-            )}
-          </div>
-        </div>
+        <CanvasElementEditor 
+          element={selectedElementData}
+          onUpdate={(changes) => handleUpdateElement(selectedElementData.id, changes)}
+        />
       )}
     </div>
   );
