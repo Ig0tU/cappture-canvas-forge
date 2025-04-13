@@ -14,21 +14,23 @@ jest.mock('@/hooks/use-toast', () => ({
   })
 }));
 
-jest.mock('../lib/canvasState', () => ({
-  simulateAgentAction: jest.fn().mockResolvedValue("I've processed your request."),
-  setProcessingState: jest.fn(),
-  STATE: {
-    agent: {
-      active: true,
-      name: 'TestAgent'
+jest.mock('../lib/canvasState', () => {
+  return {
+    simulateAgentAction: jest.fn().mockResolvedValue("I've processed your request."),
+    setProcessingState: jest.fn(),
+    STATE: {
+      agent: {
+        active: true,
+        name: 'TestAgent'
+      }
+    },
+    MessageTypes: {
+      USER: 'user',
+      AGENT: 'agent',
+      SYSTEM: 'system'
     }
-  },
-  MessageTypes: {
-    USER: 'user',
-    AGENT: 'agent',
-    SYSTEM: 'system'
-  }
-}));
+  };
+});
 
 describe('ChatInterface', () => {
   beforeEach(() => {
