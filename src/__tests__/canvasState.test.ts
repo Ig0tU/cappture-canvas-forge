@@ -12,6 +12,7 @@ import {
 import { MessageTypes } from '../lib/utils/messageFormatters';
 import { ELEMENTS } from '../lib/utils/domElements';
 import '@testing-library/jest-dom';
+import { jest, describe, test, expect, beforeEach } from '@jest/globals';
 
 // Mock DOM elements
 beforeEach(() => {

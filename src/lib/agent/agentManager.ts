@@ -1,4 +1,3 @@
-
 // Agent management
 import { STATE } from '../state/appState';
 import { updateTerminal } from '../ui/terminalManager';
@@ -43,7 +42,7 @@ export const setProcessingState = (processing: boolean): void => {
   if (sendButton) (sendButton as HTMLButtonElement).disabled = processing;
 };
 
-export const simulateAgentAction = async (userMessage: string): Promise<void> => {
+async function simulateAgentAction(prompt: string): Promise<void> {
   if (!STATE.agent.active) {
     addMessage('Please activate the agent first', MessageTypes.SYSTEM);
     return;
@@ -52,8 +51,8 @@ export const simulateAgentAction = async (userMessage: string): Promise<void> =>
   setProcessingState(true);
   
   // Add user message to chat
-  addMessage(userMessage, MessageTypes.USER, 'You');
-  updateTerminal(`User message: ${userMessage}`, MessageTypes.USER);
+  addMessage(prompt, MessageTypes.USER, 'You');
+  updateTerminal(`User message: ${prompt}`, MessageTypes.USER);
   
   try {
     // Try to use the real API if available, fall back to simulation
@@ -61,7 +60,7 @@ export const simulateAgentAction = async (userMessage: string): Promise<void> =>
     try {
       // Attempt to call the API
       const { data, error } = await supabase.functions.invoke('agent-process', {
-        body: { message: userMessage }
+        body: { message: prompt }
       });
       
       if (error) throw error;
@@ -82,12 +81,12 @@ export const simulateAgentAction = async (userMessage: string): Promise<void> =>
       await randomDelay(1000, 3000);
       
       // Simple response logic based on keywords
-      if (userMessage.toLowerCase().includes('create file') || userMessage.toLowerCase().includes('new file')) {
+      if (prompt.toLowerCase().includes('create file') || prompt.toLowerCase().includes('new file')) {
         const fileName = `new_file_${STATE.workspace.files.length + 1}.js`;
         simulateFileCreate(fileName, 'js', '// New file created by agent\n\nconsole.log("Hello from new file");');
         response = `I've created a new file named "${fileName}" for you.`;
       } 
-      else if (userMessage.toLowerCase().includes('delete file')) {
+      else if (prompt.toLowerCase().includes('delete file')) {
         if (STATE.workspace.files.length > 0) {
           const fileToDelete = STATE.workspace.files[0].name;
           simulateFileDelete(STATE.workspace.files[0].id);
@@ -96,7 +95,7 @@ export const simulateAgentAction = async (userMessage: string): Promise<void> =>
           response = "There are no files to delete.";
         }
       }
-      else if (userMessage.toLowerCase().includes('help')) {
+      else if (prompt.toLowerCase().includes('help')) {
         response = "I can help you with:\n- Creating new files\n- Managing your workspace\n- Answering questions about development\n- Providing code examples\n\nJust let me know what you need!";
       }
       else {

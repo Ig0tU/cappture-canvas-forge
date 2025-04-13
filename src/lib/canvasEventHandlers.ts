@@ -1,4 +1,3 @@
-
 import { 
   updateTerminal, 
   MessageTypes, 
@@ -78,7 +77,8 @@ export const setupEventListeners = (): void => {
       updateTerminal('Agent deactivated', MessageTypes.INFO);
       toast({
         title: "Agent Deactivated",
-        description: "The AI assistant has been turned off."
+        description: "The AI assistant has been turned off.",
+        variant: "destructive"
       });
     }
   });
