@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -7,13 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { simulateAgentAction, MessageTypes, setProcessingState } from '@/lib/canvasState';
 import { v4 as uuidv4 } from 'uuid';
-
-interface Message {
-  id: string;
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-  timestamp: Date;
-}
+import { Message } from '@/types/chat';
 
 const ChatInterface: React.FC = () => {
   const [input, setInput] = useState('');
