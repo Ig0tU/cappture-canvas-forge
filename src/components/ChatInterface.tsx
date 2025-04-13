@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Send, Plus, Command, Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { simulateAgentAction, MessageTypes } from '@/lib/canvasState';
+import { simulateAgentAction, MessageTypes, setProcessingState } from '@/lib/canvasState';
+import { v4 as uuidv4 } from 'uuid';
 
 interface Message {
   id: string;
@@ -46,6 +47,76 @@ const ChatInterface: React.FC = () => {
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  const processUserInput = async (userInput: string) => {
+    try {
+      // Show typing indicator
+      const typingIndicator = document.getElementById('typing-indicator');
+      if (typingIndicator) {
+        typingIndicator.style.display = 'flex';
+      }
+      
+      setProcessingState(true);
+      
+      // Use our API simulation for responses
+      await simulateAgentAction(userInput);
+      
+      // After the agent responds, generate a contextual response based on the input
+      let assistantResponse = '';
+      
+      if (userInput.toLowerCase().includes('create') || userInput.toLowerCase().includes('new')) {
+        assistantResponse = "I'll help you create that! Let's start by outlining the structure of what you want to build.";
+      } else if (userInput.toLowerCase().includes('modify') || userInput.toLowerCase().includes('change')) {
+        assistantResponse = "I can modify that for you. Let me show you how we can implement those changes effectively.";
+      } else if (userInput.toLowerCase().includes('optimize') || userInput.toLowerCase().includes('improve')) {
+        assistantResponse = "I'll analyze the current implementation and suggest optimizations that will improve performance.";
+      } else if (userInput.toLowerCase().includes('explain') || userInput.toLowerCase().includes('how')) {
+        assistantResponse = "Let me explain that in detail and provide you with a clear understanding of how it works.";
+      } else {
+        // Generate a more dynamic response for other queries
+        const responses = [
+          "I understand what you're looking for. Here's my approach to addressing your requirements.",
+          "That's an interesting challenge. I've analyzed several solutions and here's what I recommend.",
+          "Based on best practices, here's how we can implement this functionality in your application.",
+          "I've considered your needs and here's a solution that balances performance and usability.",
+        ];
+        assistantResponse = responses[Math.floor(Math.random() * responses.length)];
+      }
+      
+      const aiMessage: Message = {
+        id: uuidv4(),
+        role: 'assistant',
+        content: assistantResponse,
+        timestamp: new Date(),
+      };
+      
+      setMessages(prev => [...prev, aiMessage]);
+      
+      // Hide typing indicator
+      if (typingIndicator) {
+        typingIndicator.style.display = 'none';
+      }
+      
+      setProcessingState(false);
+      
+      return assistantResponse;
+    } catch (error) {
+      console.error("Error processing user input:", error);
+      toast({
+        title: "Error",
+        description: "Failed to process your request. Please try again.",
+      });
+      
+      // Hide typing indicator on error
+      const typingIndicator = document.getElementById('typing-indicator');
+      if (typingIndicator) {
+        typingIndicator.style.display = 'none';
+      }
+      
+      setProcessingState(false);
+      throw error;
+    }
+  };
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,7 +125,7 @@ const ChatInterface: React.FC = () => {
     
     // Add user message
     const userMessage: Message = {
-      id: Date.now().toString(),
+      id: uuidv4(),
       role: 'user',
       content: input,
       timestamp: new Date(),
@@ -65,33 +136,9 @@ const ChatInterface: React.FC = () => {
     setIsLoading(true);
     
     try {
-      // Use our agent simulation for responses
-      await simulateAgentAction(input);
-      
-      // After the agent responds, simulate the response message
-      setTimeout(() => {
-        const responses = [
-          "I can help you build that! Let's start by creating the basic structure for your app.",
-          "That's an interesting idea. Let me generate a prototype for you to review.",
-          "I can modify your existing app to incorporate those features. Let me show you a preview.",
-          "Based on your requirements, here's how we can implement this functionality.",
-        ];
-        
-        const aiMessage: Message = {
-          id: Date.now().toString(),
-          role: 'assistant',
-          content: responses[Math.floor(Math.random() * responses.length)],
-          timestamp: new Date(),
-        };
-        
-        setMessages(prev => [...prev, aiMessage]);
-        setIsLoading(false);
-      }, 500);
+      await processUserInput(userMessage.content);
+      setIsLoading(false);
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to process your request",
-      });
       setIsLoading(false);
     }
   };
@@ -154,10 +201,16 @@ const ChatInterface: React.FC = () => {
             size="icon"
             variant="ghost"
             className="shrink-0"
-            onClick={() => toast({
-              title: "Custom Commands",
-              description: "Command feature is coming soon!",
-            })}
+            onClick={() => {
+              const commands = ["Create new component", "Generate API", "Modify layout", "Optimize code"];
+              const randomCommand = commands[Math.floor(Math.random() * commands.length)];
+              setInput(`/${randomCommand.toLowerCase()}`);
+              
+              toast({
+                title: "Command Inserted",
+                description: `Command inserted: ${randomCommand}`,
+              });
+            }}
           >
             <Command className="h-5 w-5" />
           </Button>
