@@ -109,7 +109,7 @@ export const setupEventListeners = (): void => {
           toast({
             title: "Agent Inactive",
             description: "Please activate the agent before sending messages.",
-            variant: "warning"
+            variant: "destructive"
           });
         }
       }

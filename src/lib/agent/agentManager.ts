@@ -4,7 +4,7 @@ import { STATE } from '../state/appState';
 import { updateTerminal } from '../ui/terminalManager';
 import { MessageTypes } from '../utils/messageFormatters';
 import { addMessage } from '../ui/chatManager';
-import { simulateFileCreate } from '../fileSystem/fileManager';
+import { simulateFileCreate, simulateFileDelete } from '../fileSystem/fileManager';
 import { randomDelay } from '../utils/sanitization';
 import { v4 as uuidv4 } from 'uuid';
 import { supabase } from "@/integrations/supabase/client";
@@ -116,7 +116,6 @@ export const simulateAgentAction = async (userMessage: string): Promise<void> =>
     updateTerminal(`Agent response: ${response}`, MessageTypes.AGENT);
     
     setProcessingState(false);
-    return response;
   } catch (error) {
     console.error("Error in agent action:", error);
     setProcessingState(false);

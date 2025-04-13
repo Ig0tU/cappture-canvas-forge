@@ -4,6 +4,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ChatInterface from '../components/ChatInterface';
 import { simulateAgentAction, setProcessingState } from '../lib/canvasState';
+import '@testing-library/jest-dom';
 
 // Mock dependencies
 jest.mock('@/hooks/use-toast', () => ({

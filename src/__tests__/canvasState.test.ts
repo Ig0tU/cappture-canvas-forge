@@ -11,6 +11,7 @@ import {
 } from '../lib/canvasState';
 import { MessageTypes } from '../lib/utils/messageFormatters';
 import { ELEMENTS } from '../lib/utils/domElements';
+import '@testing-library/jest-dom';
 
 // Mock DOM elements
 beforeEach(() => {
