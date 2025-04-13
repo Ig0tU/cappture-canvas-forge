@@ -15,7 +15,7 @@ jest.mock('@/hooks/use-toast', () => ({
 }));
 
 jest.mock('../lib/canvasState', () => ({
-  simulateAgentAction: jest.fn(),
+  simulateAgentAction: jest.fn().mockResolvedValue("I've processed your request."),
   setProcessingState: jest.fn(),
   STATE: {
     agent: {
@@ -34,7 +34,6 @@ describe('ChatInterface', () => {
   beforeEach(() => {
     // Reset mocks
     jest.clearAllMocks();
-    (simulateAgentAction as jest.Mock).mockResolvedValue("I've processed your request.");
   });
 
   test('renders welcome message', () => {

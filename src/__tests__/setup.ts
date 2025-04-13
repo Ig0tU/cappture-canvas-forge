@@ -44,7 +44,7 @@ jest.mock('@/integrations/supabase/client', () => ({
 }));
 
 // Mock DOM elements for canvas operations
-Element.prototype.getBoundingClientRect = jest.fn().mockReturnValue({
+Element.prototype.getBoundingClientRect = jest.fn().mockImplementation(() => ({
   width: 500,
   height: 500,
   top: 0,
@@ -54,4 +54,4 @@ Element.prototype.getBoundingClientRect = jest.fn().mockReturnValue({
   x: 0,
   y: 0,
   toJSON: () => {}
-});
+}));

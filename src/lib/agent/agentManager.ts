@@ -1,3 +1,4 @@
+
 // Agent management
 import { STATE } from '../state/appState';
 import { updateTerminal } from '../ui/terminalManager';
@@ -42,10 +43,10 @@ export const setProcessingState = (processing: boolean): void => {
   if (sendButton) (sendButton as HTMLButtonElement).disabled = processing;
 };
 
-async function simulateAgentAction(prompt: string): Promise<void> {
+export const simulateAgentAction = async (prompt: string): Promise<string> => {
   if (!STATE.agent.active) {
     addMessage('Please activate the agent first', MessageTypes.SYSTEM);
-    return;
+    return "Agent not active";
   }
   
   setProcessingState(true);
@@ -115,9 +116,10 @@ async function simulateAgentAction(prompt: string): Promise<void> {
     updateTerminal(`Agent response: ${response}`, MessageTypes.AGENT);
     
     setProcessingState(false);
+    return response;
   } catch (error) {
     console.error("Error in agent action:", error);
     setProcessingState(false);
-    throw error;
+    return `Error: ${error.message}`;
   }
 };
