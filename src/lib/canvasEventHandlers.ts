@@ -1,3 +1,4 @@
+
 import { 
   updateTerminal, 
   MessageTypes, 
@@ -45,9 +46,6 @@ export const setupEventListeners = (): void => {
               
               // Log position update to console for now
               console.log("Element position updated:", elementId, position);
-              
-              // In a real implementation, we would save this to the backend
-              // supabase.from('canvas_elements').update({ position }).eq('id', elementId);
             }
           }
         } catch (error) {
@@ -85,7 +83,7 @@ export const setupEventListeners = (): void => {
 
   // Listen for form submissions
   document.addEventListener('submit', (e) => {
-    const target = e.target as HTMLElement;
+    const target = e.target as HTMLFormElement;
     
     if (target.id === 'chat-form') {
       e.preventDefault();
@@ -156,6 +154,21 @@ export const setupEventListeners = (): void => {
   document.addEventListener('dragend', () => {
     triggerAutoSave();
   });
+  
+  // Add keyboard event listener for chat input
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      const activeElement = document.activeElement as HTMLElement;
+      if (activeElement.id === 'message-input') {
+        e.preventDefault();
+        const form = document.getElementById('chat-form');
+        if (form) {
+          const event = new Event('submit', { cancelable: true });
+          form.dispatchEvent(event);
+        }
+      }
+    }
+  });
 };
 
 // Setup Supabase realtime subscription for collaborative editing
@@ -168,9 +181,6 @@ export const setupRealtimeSubscription = () => {
         .on('broadcast', { event: 'canvas_update' }, (payload) => {
           console.log("Received canvas update:", payload);
           updateTerminal('Received update from collaborator', MessageTypes.INFO);
-          
-          // In a real implementation, we would update the canvas with the received data
-          // updateCanvasElement(payload.elementId, payload.changes);
         })
         .subscribe();
         

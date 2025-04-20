@@ -134,5 +134,3 @@ export const simulateAgentAction = async (prompt: string): Promise<string> => {
     return `Error: ${error.message}`;
   }
 };
-
-// Removed duplicate exports at the bottom of the file

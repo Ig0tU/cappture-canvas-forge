@@ -14,7 +14,7 @@ jest.mock('@/hooks/use-toast', () => ({
 }));
 
 jest.mock('../lib/canvasState', () => ({
-  simulateAgentAction: jest.fn().mockImplementation((input) => {
+  simulateAgentAction: jest.fn().mockImplementation((input: string): Promise<string> => {
     return Promise.resolve("I've processed your request.");
   }),
   setProcessingState: jest.fn(),

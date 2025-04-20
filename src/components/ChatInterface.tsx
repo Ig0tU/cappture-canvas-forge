@@ -1,12 +1,16 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Send, Plus, Command, Zap } from 'lucide-react';
+import { Send, Command, Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { simulateAgentAction, MessageTypes, setProcessingState } from '@/lib/canvasState';
 import { v4 as uuidv4 } from 'uuid';
 import { Message } from '@/types/chat';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Textarea } from '@/components/ui/textarea';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 const ChatInterface: React.FC = () => {
   const [input, setInput] = useState('');
@@ -23,6 +27,7 @@ const ChatInterface: React.FC = () => {
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   
   useEffect(() => {
@@ -36,12 +41,27 @@ const ChatInterface: React.FC = () => {
       chatContainerRef.current.id = 'chat-container';
     }
   }, []);
+
+  useEffect(() => {
+    // Listen for the Enter key in the input field
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key === 'Enter' && !e.shiftKey && document.activeElement === inputRef.current) {
+        e.preventDefault();
+        handleSubmit(new Event('submit') as unknown as React.FormEvent);
+      }
+    };
+
+    document.addEventListener('keypress', handleKeyPress);
+    return () => {
+      document.removeEventListener('keypress', handleKeyPress);
+    };
+  }, [input, isAgentActive, isLoading]);
   
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const processUserInput = async (userInput: string) => {
+  const processUserInput = async (userInput: string): Promise<string> => {
     try {
       // Show typing indicator
       const typingIndicator = document.getElementById('typing-indicator');
@@ -52,38 +72,7 @@ const ChatInterface: React.FC = () => {
       setProcessingState(true);
       
       // Use our API simulation for responses
-      await simulateAgentAction(userInput);
-      
-      // After the agent responds, generate a contextual response based on the input
-      let assistantResponse = '';
-      
-      if (userInput.toLowerCase().includes('create') || userInput.toLowerCase().includes('new')) {
-        assistantResponse = "I'll help you create that! Let's start by outlining the structure of what you want to build.";
-      } else if (userInput.toLowerCase().includes('modify') || userInput.toLowerCase().includes('change')) {
-        assistantResponse = "I can modify that for you. Let me show you how we can implement those changes effectively.";
-      } else if (userInput.toLowerCase().includes('optimize') || userInput.toLowerCase().includes('improve')) {
-        assistantResponse = "I'll analyze the current implementation and suggest optimizations that will improve performance.";
-      } else if (userInput.toLowerCase().includes('explain') || userInput.toLowerCase().includes('how')) {
-        assistantResponse = "Let me explain that in detail and provide you with a clear understanding of how it works.";
-      } else {
-        // Generate a more dynamic response for other queries
-        const responses = [
-          "I understand what you're looking for. Here's my approach to addressing your requirements.",
-          "That's an interesting challenge. I've analyzed several solutions and here's what I recommend.",
-          "Based on best practices, here's how we can implement this functionality in your application.",
-          "I've considered your needs and here's a solution that balances performance and usability.",
-        ];
-        assistantResponse = responses[Math.floor(Math.random() * responses.length)];
-      }
-      
-      const aiMessage: Message = {
-        id: uuidv4(),
-        role: 'assistant',
-        content: assistantResponse,
-        timestamp: new Date(),
-      };
-      
-      setMessages(prev => [...prev, aiMessage]);
+      const agentResponse = await simulateAgentAction(userInput);
       
       // Hide typing indicator
       if (typingIndicator) {
@@ -92,7 +81,7 @@ const ChatInterface: React.FC = () => {
       
       setProcessingState(false);
       
-      return assistantResponse;
+      return agentResponse;
     } catch (error) {
       console.error("Error processing user input:", error);
       toast({
@@ -133,6 +122,7 @@ const ChatInterface: React.FC = () => {
       setIsLoading(false);
     } catch (error) {
       setIsLoading(false);
+      console.error("Error handling submission:", error);
     }
   };
   
@@ -143,20 +133,60 @@ const ChatInterface: React.FC = () => {
       description: isAgentActive ? "The agent is now deactivated" : "The agent is ready to assist you",
     });
   };
+
+  const insertSampleCommand = () => {
+    const commands = ["Create new component", "Generate API", "Modify layout", "Optimize code"];
+    const randomCommand = commands[Math.floor(Math.random() * commands.length)];
+    setInput(`/${randomCommand.toLowerCase()}`);
+    
+    toast({
+      title: "Command Inserted",
+      description: `Command inserted: ${randomCommand}`,
+    });
+    
+    // Focus the input after inserting command
+    inputRef.current?.focus();
+  };
   
   return (
     <div className="flex flex-col h-full">
       <div className="px-4 py-2 border-b border-border/40">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-medium">Canvas Assistant</h3>
-          <Button 
-            size="sm" 
-            variant={isAgentActive ? "default" : "outline"}
-            onClick={toggleAgent}
-            className={isAgentActive ? "bg-accent text-accent-foreground" : ""}
-          >
-            {isAgentActive ? "Active" : "Activate"} <Zap className="ml-1 h-3 w-3" />
-          </Button>
+          <div className="flex items-center space-x-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button size="sm" variant="outline" className="h-8 px-2">
+                  Settings
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent>
+                <div className="space-y-4">
+                  <h4 className="font-medium">Assistant Settings</h4>
+                  <div className="space-y-2">
+                    <label className="text-sm text-muted-foreground">Provider</label>
+                    <select className="w-full p-2 border rounded-md bg-background">
+                      <option>Default</option>
+                      <option>OpenAI</option>
+                      <option>Anthropic</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm text-muted-foreground">Temperature</label>
+                    <Input type="range" min="0" max="1" step="0.1" defaultValue="0.7" />
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+            <Button 
+              size="sm" 
+              variant={isAgentActive ? "default" : "outline"}
+              onClick={toggleAgent}
+              className={isAgentActive ? "bg-accent text-accent-foreground" : ""}
+            >
+              {isAgentActive ? "Active" : "Activate"} <Zap className="ml-1 h-3 w-3" />
+            </Button>
+          </div>
         </div>
       </div>
       
@@ -194,16 +224,7 @@ const ChatInterface: React.FC = () => {
             size="icon"
             variant="ghost"
             className="shrink-0"
-            onClick={() => {
-              const commands = ["Create new component", "Generate API", "Modify layout", "Optimize code"];
-              const randomCommand = commands[Math.floor(Math.random() * commands.length)];
-              setInput(`/${randomCommand.toLowerCase()}`);
-              
-              toast({
-                title: "Command Inserted",
-                description: `Command inserted: ${randomCommand}`,
-              });
-            }}
+            onClick={insertSampleCommand}
           >
             <Command className="h-5 w-5" />
           </Button>
@@ -214,6 +235,7 @@ const ChatInterface: React.FC = () => {
             placeholder="Ask me anything..."
             disabled={isLoading || !isAgentActive}
             className="flex-1"
+            ref={inputRef}
           />
           <Button
             id="send-message"
@@ -235,6 +257,30 @@ const ChatInterface: React.FC = () => {
           <span>Canvas Assistant is thinking...</span>
         </div>
       </div>
+      
+      <Sheet>
+        <SheetTrigger asChild>
+          <Button variant="outline" size="sm" className="absolute bottom-4 right-4 rounded-full h-10 w-10 p-0">
+            <span className="sr-only">Open AI Prompt Editor</span>
+            <Command className="h-5 w-5" />
+          </Button>
+        </SheetTrigger>
+        <SheetContent className="w-[400px] sm:w-[540px]">
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold">Advanced Prompt Editor</h2>
+            <Textarea 
+              placeholder="Write your advanced prompt here..." 
+              className="min-h-[200px]"
+            />
+            <div className="flex justify-between">
+              <Button variant="outline">Clear</Button>
+              <Button onClick={() => toast({ title: "Prompt saved", description: "Your prompt template has been saved" })}>
+                Save Template
+              </Button>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };
