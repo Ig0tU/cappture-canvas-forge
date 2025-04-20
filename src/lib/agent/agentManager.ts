@@ -1,5 +1,3 @@
-
-// Agent management
 import { STATE } from '../state/appState';
 import { updateTerminal } from '../ui/terminalManager';
 import { addMessage } from '../ui/chatManager';
