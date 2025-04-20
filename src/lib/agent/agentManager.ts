@@ -1,3 +1,4 @@
+
 import { STATE } from '../state/appState';
 import { updateTerminal } from '../ui/terminalManager';
 import { addMessage } from '../ui/chatManager';
@@ -134,5 +135,4 @@ export const simulateAgentAction = async (prompt: string): Promise<string> => {
   }
 };
 
-// Export functions
-export { toggleAgentState, setProcessingState, simulateAgentAction };
+// Removed duplicate exports at the bottom of the file
