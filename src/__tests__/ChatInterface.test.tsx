@@ -8,6 +8,9 @@ import '@testing-library/jest-dom';
 // Import our setup file
 import './setup';
 
+// Explicitly extend Jest's expect
+import { expect as jestExpect } from '@jest/globals';
+
 // Mock agent functions
 jest.mock('../lib/agent/agentManager', () => ({
   simulateAgentAction: jest.fn().mockImplementation((input: string): Promise<string> => {
@@ -31,8 +34,13 @@ describe('ChatInterface', () => {
   test('renders welcome message', () => {
     render(<ChatInterface />);
     
-    expect(screen.getByText(/Welcome to CapptureCanvas/i)).toBeInTheDocument();
-    expect(screen.getByText('Canvas Assistant')).toBeInTheDocument();
+    // Use screen.getByText, which is properly typed
+    const welcomeElement = screen.getByText(/Welcome to CapptureCanvas/i);
+    const assistantElement = screen.getByText('Canvas Assistant');
+    
+    // Now assert using the extended matchers
+    expect(welcomeElement).toBeInTheDocument();
+    expect(assistantElement).toBeInTheDocument();
   });
   
   test('allows activating and deactivating agent', () => {
@@ -41,7 +49,8 @@ describe('ChatInterface', () => {
     const activateButton = screen.getByText(/activate/i);
     fireEvent.click(activateButton);
     
-    expect(screen.getByText(/active/i)).toBeInTheDocument();
+    const activeElement = screen.getByText(/active/i);
+    expect(activeElement).toBeInTheDocument();
   });
   
   test('sends messages when agent is active', async () => {

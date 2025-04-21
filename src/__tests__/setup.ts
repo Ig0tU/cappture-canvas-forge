@@ -61,3 +61,14 @@ const mockDOMRect = {
 
 // Properly mock getBoundingClientRect with the correct return type
 Element.prototype.getBoundingClientRect = jest.fn(() => mockDOMRect as DOMRect);
+
+// Make sure the matchers are properly attached to Jest
+expect.extend({
+  toBeInTheDocument(received) {
+    const pass = received !== null;
+    return {
+      message: () => `expected ${received} ${pass ? 'not ' : ''}to be in the document`,
+      pass,
+    };
+  },
+});
