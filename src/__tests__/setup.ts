@@ -1,7 +1,6 @@
 
 import '@testing-library/jest-dom';
 import { jest } from '@jest/globals';
-import type { DOMRect } from '@testing-library/dom';
 
 // Make sure Jest matchers are available for DOM assertions
 declare global {
@@ -44,16 +43,17 @@ jest.mock('@/integrations/supabase/client', () => ({
 }));
 
 // Mock DOM elements for canvas operations
-Element.prototype.getBoundingClientRect = jest.fn().mockImplementation((): DOMRect => {
-  return {
-    width: 500,
-    height: 500,
-    top: 0,
-    left: 0,
-    bottom: 500,
-    right: 500,
-    x: 0,
-    y: 0,
-    toJSON: () => ({}),
-  } as DOMRect;
-});
+// Using a proper type for DOMRect
+const mockDOMRect = {
+  width: 500,
+  height: 500,
+  top: 0,
+  left: 0,
+  bottom: 500,
+  right: 500,
+  x: 0,
+  y: 0,
+  toJSON: () => ({})
+};
+
+Element.prototype.getBoundingClientRect = jest.fn().mockImplementation(() => mockDOMRect);
