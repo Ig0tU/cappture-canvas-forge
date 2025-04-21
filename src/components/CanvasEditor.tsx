@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Image } from 'lucide-react';
@@ -7,6 +6,7 @@ import { setupEventListeners, setupRealtimeSubscription } from '@/lib/canvasEven
 import CanvasToolbar from './CanvasToolbar';
 import ComponentPalette from './ComponentPalette';
 import CanvasElementEditor from './CanvasElementEditor';
+import GradientMenuButton from './GradientMenuButton';
 
 interface CanvasElement {
   id: string;
@@ -33,18 +33,20 @@ const CanvasEditor: React.FC = () => {
   const terminalRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   
-  // Track if canvas design has unsaved changes
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   
+  const externalLinks = [
+    { title: "Documentation", url: "https://docs.example.com" },
+    { title: "GitHub Repository", url: "https://github.com/example/repo" },
+    { title: "Support Portal", url: "https://support.example.com" }
+  ];
+
   useEffect(() => {
-    // Initialize canvas state when component mounts
     initializeCanvasState();
     setupEventListeners();
     
-    // Set up the workspace area
     updateFileList();
     
-    // Load saved canvas elements from local storage
     const savedCanvas = localStorage.getItem('canvasElements');
     if (savedCanvas) {
       try {
@@ -54,14 +56,12 @@ const CanvasEditor: React.FC = () => {
       }
     }
     
-    // Set up auto-save
     const autoSaveInterval = setInterval(() => {
       if (autoSave && hasUnsavedChanges) {
         saveCanvas();
       }
-    }, 30000); // Auto-save every 30 seconds
+    }, 30000);
     
-    // Setup realtime subscription
     const unsubscribe = setupRealtimeSubscription();
     
     return () => {
@@ -97,13 +97,11 @@ const CanvasEditor: React.FC = () => {
     e.preventDefault();
     const elementType = e.dataTransfer.getData('text/plain');
     
-    // Get canvas position
     if (canvasRef.current) {
       const rect = canvasRef.current.getBoundingClientRect();
       const x = (e.clientX - rect.left) / (zoomLevel / 100);
       const y = (e.clientY - rect.top) / (zoomLevel / 100);
       
-      // Create new element
       const newElement: CanvasElement = {
         id: `element-${Date.now()}`,
         type: elementType,
@@ -196,7 +194,7 @@ const CanvasEditor: React.FC = () => {
   };
   
   const handleCanvasDragStart = (e: React.MouseEvent) => {
-    if (e.button === 1 || (e.button === 0 && e.altKey)) { // Middle button or Alt+Left click
+    if (e.button === 1 || (e.button === 0 && e.altKey)) {
       setIsDraggingCanvas(true);
     }
   };
@@ -255,7 +253,6 @@ const CanvasEditor: React.FC = () => {
     setShowTerminal(prev => !prev);
   };
   
-  // Get the selected element data
   const selectedElementData = canvasElements.find(el => el.id === selectedElement) || null;
 
   return (
@@ -271,9 +268,14 @@ const CanvasEditor: React.FC = () => {
       />
       
       <div className="flex flex-1 gap-4">
-        <ComponentPalette onDragStart={handleDragStart} />
+        <div className="flex-shrink-0 z-10">
+          <ComponentPalette onDragStart={handleDragStart} />
+        </div>
         
         <div className="flex-1 flex flex-col">
+          <div className="mb-2 flex justify-between items-center">
+            <GradientMenuButton links={externalLinks} />
+          </div>
           <div 
             className="flex-1 canvas-editor border border-border/40 rounded-md overflow-hidden relative bg-white/5"
             ref={canvasRef}
@@ -315,7 +317,6 @@ const CanvasEditor: React.FC = () => {
                   onClick={(e) => handleElementClick(element.id, e)}
                   draggable
                   onDragStart={(e) => {
-                    // Mark that we're dragging an existing element
                     e.dataTransfer.setData('application/element-id', element.id);
                   }}
                   data-element-id={element.id}

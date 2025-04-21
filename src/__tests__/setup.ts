@@ -71,4 +71,32 @@ expect.extend({
       pass,
     };
   },
+  toBeVisible(received) {
+    const pass = received !== null;
+    return {
+      message: () => `expected ${received} ${pass ? 'not ' : ''}to be visible`,
+      pass,
+    };
+  },
+  toHaveTextContent(received, text) {
+    const pass = received !== null && received.textContent === text;
+    return {
+      message: () => `expected ${received} ${pass ? 'not ' : ''}to have text content "${text}"`,
+      pass,
+    };
+  },
+  toHaveValue(received, value) {
+    const pass = received !== null && received.value === value;
+    return {
+      message: () => `expected ${received} ${pass ? 'not ' : ''}to have value "${value}"`,
+      pass,
+    };
+  },
+  toHaveClass(received, className) {
+    const pass = received !== null && received.classList.contains(className);
+    return {
+      message: () => `expected ${received} ${pass ? 'not ' : ''}to have class "${className}"`,
+      pass,
+    };
+  },
 });

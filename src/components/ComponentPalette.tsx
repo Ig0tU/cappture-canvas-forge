@@ -1,5 +1,4 @@
 
-// Component for component palette
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -14,24 +13,24 @@ interface ComponentPaletteProps {
 
 const ComponentPalette: React.FC<ComponentPaletteProps> = ({ onDragStart }) => {
   return (
-    <Card className="w-48 shrink-0">
+    <Card className="w-48 shrink-0 h-[calc(100vh-240px)] overflow-hidden">
       <Tabs defaultValue="components">
-        <TabsList className="w-full">
-          <TabsTrigger value="components" className="flex-1">
+        <TabsList className="w-full grid grid-cols-3">
+          <TabsTrigger value="components" className="text-xs">
             <Boxes className="h-4 w-4 mr-1" />
-            <span className="sr-only sm:not-sr-only sm:inline-block">Components</span>
+            <span>Components</span>
           </TabsTrigger>
-          <TabsTrigger value="layout" className="flex-1">
+          <TabsTrigger value="layout" className="text-xs">
             <LayoutGrid className="h-4 w-4 mr-1" />
-            <span className="sr-only sm:not-sr-only sm:inline-block">Layout</span>
+            <span>Layout</span>
           </TabsTrigger>
-          <TabsTrigger value="files" className="flex-1">
+          <TabsTrigger value="files" className="text-xs">
             <FileText className="h-4 w-4 mr-1" />
-            <span className="sr-only sm:not-sr-only sm:inline-block">Files</span>
+            <span>Files</span>
           </TabsTrigger>
         </TabsList>
         
-        <ScrollArea className="h-[calc(100vh-240px)]">
+        <ScrollArea className="h-[calc(100vh-290px)]">
           <TabsContent value="components" className="m-0 py-2">
             <CardContent className="p-2 space-y-2">
               {[
