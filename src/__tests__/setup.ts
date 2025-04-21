@@ -56,4 +56,5 @@ const mockDOMRect = {
 };
 
 // Properly mock getBoundingClientRect with the correct return type
-Element.prototype.getBoundingClientRect = jest.fn().mockImplementation(() => mockDOMRect as DOMRect);
+Element.prototype.getBoundingClientRect = jest.fn(() => mockDOMRect as DOMRect);
+

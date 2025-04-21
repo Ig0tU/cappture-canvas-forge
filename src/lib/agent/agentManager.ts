@@ -24,11 +24,11 @@ export const setProcessingState = (state: boolean): void => {
   isProcessing = state;
   
   // Update UI elements based on processing state
-  if (ELEMENTS.sendButton) {
+  if (ELEMENTS.sendButton && ELEMENTS.sendButton instanceof HTMLButtonElement) {
     ELEMENTS.sendButton.disabled = state;
   }
   
-  if (ELEMENTS.inputField) {
+  if (ELEMENTS.inputField && ELEMENTS.inputField instanceof HTMLInputElement) {
     ELEMENTS.inputField.disabled = state;
   }
   

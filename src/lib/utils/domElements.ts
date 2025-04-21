@@ -5,8 +5,8 @@ export const ELEMENTS = {
   terminalOutput: null as HTMLElement | null,
   fileList: null as HTMLElement | null,
   typingIndicator: null as HTMLElement | null,
-  sendButton: null as HTMLElement | null,
-  inputField: null as HTMLElement | null
+  sendButton: null as HTMLButtonElement | null,
+  inputField: null as HTMLInputElement | null
 };
 
 export const initializeElements = (): void => {
@@ -15,6 +15,6 @@ export const initializeElements = (): void => {
   ELEMENTS.terminalOutput = document.getElementById('terminal-output');
   ELEMENTS.fileList = document.getElementById('file-list');
   ELEMENTS.typingIndicator = document.getElementById('typing-indicator');
-  ELEMENTS.sendButton = document.getElementById('send-message');
-  ELEMENTS.inputField = document.getElementById('message-input');
+  ELEMENTS.sendButton = document.getElementById('send-message') as HTMLButtonElement | null;
+  ELEMENTS.inputField = document.getElementById('message-input') as HTMLInputElement | null;
 };

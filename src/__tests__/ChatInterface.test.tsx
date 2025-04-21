@@ -5,6 +5,15 @@ import ChatInterface from '../components/ChatInterface';
 import '@testing-library/jest-dom';
 import { jest, describe, test, expect, beforeEach } from '@jest/globals';
 
+// Extend Jest matchers
+declare global {
+  namespace jest {
+    interface Matchers<R> {
+      toBeInTheDocument(): R;
+    }
+  }
+}
+
 // Mock agent functions
 jest.mock('../lib/agent/agentManager', () => ({
   simulateAgentAction: jest.fn().mockImplementation((input: string): Promise<string> => {
