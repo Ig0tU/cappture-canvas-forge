@@ -2,17 +2,11 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ChatInterface from '../components/ChatInterface';
-import '@testing-library/jest-dom';
 import { jest, describe, test, expect, beforeEach } from '@jest/globals';
-
-// Extend Jest matchers
-declare global {
-  namespace jest {
-    interface Matchers<R> {
-      toBeInTheDocument(): R;
-    }
-  }
-}
+// Import the extended matchers from jest-dom
+import '@testing-library/jest-dom';
+// Import our setup file
+import './setup';
 
 // Mock agent functions
 jest.mock('../lib/agent/agentManager', () => ({

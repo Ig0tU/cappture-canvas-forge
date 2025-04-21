@@ -7,6 +7,10 @@ declare global {
   namespace jest {
     interface Matchers<R> {
       toBeInTheDocument(): R;
+      toBeVisible(): R;
+      toHaveTextContent(text: string): R;
+      toHaveValue(value: string): R;
+      toHaveClass(className: string): R;
     }
   }
 }
@@ -57,4 +61,3 @@ const mockDOMRect = {
 
 // Properly mock getBoundingClientRect with the correct return type
 Element.prototype.getBoundingClientRect = jest.fn(() => mockDOMRect as DOMRect);
-
