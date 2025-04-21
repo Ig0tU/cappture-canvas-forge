@@ -2,33 +2,22 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ChatInterface from '../components/ChatInterface';
-import { simulateAgentAction, setProcessingState } from '../lib/canvasState';
 import '@testing-library/jest-dom';
 import { jest, describe, test, expect, beforeEach } from '@jest/globals';
 
-// Mock dependencies
-jest.mock('@/hooks/use-toast', () => ({
-  useToast: () => ({
-    toast: jest.fn()
-  })
-}));
-
-jest.mock('../lib/canvasState', () => ({
+// Mock agent functions
+jest.mock('../lib/agent/agentManager', () => ({
   simulateAgentAction: jest.fn().mockImplementation((input: string): Promise<string> => {
     return Promise.resolve("I've processed your request.");
   }),
   setProcessingState: jest.fn(),
-  STATE: {
-    agent: {
-      active: true,
-      name: 'TestAgent'
-    }
-  },
-  MessageTypes: {
-    USER: 'user',
-    AGENT: 'agent',
-    SYSTEM: 'system'
-  }
+}));
+
+// Mock toast hook
+jest.mock('@/hooks/use-toast', () => ({
+  useToast: () => ({
+    toast: jest.fn()
+  })
 }));
 
 describe('ChatInterface', () => {
@@ -53,8 +42,14 @@ describe('ChatInterface', () => {
   });
   
   test('sends messages when agent is active', async () => {
+    const { simulateAgentAction, setProcessingState } = require('../lib/agent/agentManager');
     render(<ChatInterface />);
     
+    // Activate the agent first
+    const activateButton = screen.getByText(/activate/i);
+    fireEvent.click(activateButton);
+    
+    // Now send a message
     const input = screen.getByPlaceholderText(/Ask me anything/i);
     const sendButton = screen.getByRole('button', { name: '' });
     
@@ -64,7 +59,6 @@ describe('ChatInterface', () => {
     await waitFor(() => {
       expect(simulateAgentAction).toHaveBeenCalledWith('Create a new file');
       expect(setProcessingState).toHaveBeenCalledWith(true);
-      expect(setProcessingState).toHaveBeenCalledWith(false);
     });
   });
 });

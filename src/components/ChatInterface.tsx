@@ -2,15 +2,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Send, Command, Zap } from 'lucide-react';
+import { Send, Command, Zap, Settings as SettingsIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { simulateAgentAction, MessageTypes, setProcessingState } from '@/lib/canvasState';
 import { v4 as uuidv4 } from 'uuid';
 import { Message } from '@/types/chat';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { simulateAgentAction, setProcessingState } from '@/lib/agent/agentManager';
 
 const ChatInterface: React.FC = () => {
   const [input, setInput] = useState('');
@@ -24,6 +24,8 @@ const ChatInterface: React.FC = () => {
   ]);
   const [isLoading, setIsLoading] = useState(false);
   const [isAgentActive, setIsAgentActive] = useState(false);
+  const [selectedProvider, setSelectedProvider] = useState<string>('Anthropic');
+  const [temperature, setTemperature] = useState<string>('0.7');
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -56,6 +58,13 @@ const ChatInterface: React.FC = () => {
       document.removeEventListener('keypress', handleKeyPress);
     };
   }, [input, isAgentActive, isLoading]);
+
+  useEffect(() => {
+    // Set focus on input field when component mounts
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 100);
+  }, []);
   
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -71,8 +80,16 @@ const ChatInterface: React.FC = () => {
       
       setProcessingState(true);
       
-      // Use our API simulation for responses
-      const agentResponse = await simulateAgentAction(userInput);
+      // Use the agent system to process the request
+      let agentResponse: string;
+      
+      // In a real implementation, this would use Anthropic's Claude API
+      // For now, we'll use our existing simulateAgentAction function
+      if (selectedProvider === 'Anthropic') {
+        agentResponse = await simulateAgentAction(`[Using Claude] ${userInput}`);
+      } else {
+        agentResponse = await simulateAgentAction(userInput);
+      }
       
       // Hide typing indicator
       if (typingIndicator) {
@@ -118,7 +135,17 @@ const ChatInterface: React.FC = () => {
     setIsLoading(true);
     
     try {
-      await processUserInput(userMessage.content);
+      const response = await processUserInput(userMessage.content);
+      
+      // Add agent response
+      const agentMessage: Message = {
+        id: uuidv4(),
+        role: 'assistant',
+        content: response,
+        timestamp: new Date(),
+      };
+      
+      setMessages(prev => [...prev, agentMessage]);
       setIsLoading(false);
     } catch (error) {
       setIsLoading(false);
@@ -157,7 +184,7 @@ const ChatInterface: React.FC = () => {
             <Popover>
               <PopoverTrigger asChild>
                 <Button size="sm" variant="outline" className="h-8 px-2">
-                  Settings
+                  <SettingsIcon className="h-4 w-4 mr-1" /> Settings
                 </Button>
               </PopoverTrigger>
               <PopoverContent>
@@ -165,15 +192,27 @@ const ChatInterface: React.FC = () => {
                   <h4 className="font-medium">Assistant Settings</h4>
                   <div className="space-y-2">
                     <label className="text-sm text-muted-foreground">Provider</label>
-                    <select className="w-full p-2 border rounded-md bg-background">
-                      <option>Default</option>
-                      <option>OpenAI</option>
+                    <select 
+                      className="w-full p-2 border rounded-md bg-background"
+                      value={selectedProvider}
+                      onChange={(e) => setSelectedProvider(e.target.value)}
+                    >
                       <option>Anthropic</option>
+                      <option>OpenAI</option>
+                      <option>Default</option>
                     </select>
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm text-muted-foreground">Temperature</label>
-                    <Input type="range" min="0" max="1" step="0.1" defaultValue="0.7" />
+                    <Input 
+                      type="range" 
+                      min="0" 
+                      max="1" 
+                      step="0.1" 
+                      value={temperature}
+                      onChange={(e) => setTemperature(e.target.value)}
+                    />
+                    <div className="text-xs text-right">{temperature}</div>
                   </div>
                 </div>
               </PopoverContent>
@@ -236,6 +275,8 @@ const ChatInterface: React.FC = () => {
             disabled={isLoading || !isAgentActive}
             className="flex-1"
             ref={inputRef}
+            autoFocus
+            aria-label="Chat input"
           />
           <Button
             id="send-message"

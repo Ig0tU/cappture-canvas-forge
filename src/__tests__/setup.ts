@@ -42,7 +42,6 @@ jest.mock('@/integrations/supabase/client', () => ({
   }
 }));
 
-// Mock DOM elements for canvas operations
 // Using a proper type for DOMRect
 const mockDOMRect = {
   width: 500,
@@ -56,4 +55,5 @@ const mockDOMRect = {
   toJSON: () => ({})
 };
 
-Element.prototype.getBoundingClientRect = jest.fn().mockImplementation(() => mockDOMRect);
+// Properly mock getBoundingClientRect with the correct return type
+Element.prototype.getBoundingClientRect = jest.fn().mockImplementation(() => mockDOMRect as DOMRect);
